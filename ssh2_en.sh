@@ -1,13 +1,11 @@
 #!/bin/bash
 
-# Запрашиваем у пользователя новый порт по умолчанию
-NEW_PORT=""
-while [ -z "$NEW_PORT" ]; do
+# Запрашиваем у пользователя изменить ли порт по умолчанию
+read -p "Do you want to change the default port? (y/n) " CHANGE_PORT
+if [ "$CHANGE_PORT" = "y" ]; then
     read -p "Enter new default port: " NEW_PORT
-done
-
-# Обновляем файл sshd_config с новым портом
 sed -i "s/^#*\s*Port\s.*$/Port $NEW_PORT/" /etc/ssh/sshd_config
+fi
 
 # Задаем вопросы пользователю и обновляем файл sshd_config в соответствии с ответами
 read -p "Disable empty passwords? (y/n) " DISABLE_EMPTY_PASSWDS
@@ -26,11 +24,25 @@ if [ "$DISABLE_ROOT_LOGIN" = "y" ]; then
 sed -i "s/^#*\s*PermitRootLogin\s.*$/PermitRootLogin no/" /etc/ssh/sshd_config
 fi
 
+read -p "Enable key authentication? (y/n) " ENABLE_KEY_AUTH
+if [ "$ENABLE_KEY_AUTH" = "y" ]; then
+sed -i "s/^#*\s*PubkeyAuthentication\s.*$/PubkeyAuthentication yes/" /etc/ssh/sshd_config
+fi
+
+read -p "Enable password authentication? (y/n) " ENABLE_PASSWORD_AUTH
+if [ "$ENABLE_PASSWORD_AUTH" = "y" ]; then
+sed -i "s/^#*\s*PasswordAuthentication\s.*$/PasswordAuthentication yes/" /etc/ssh/sshd_config
+fi
+
 read -p "Enter users to allow (comma-separated): " ALLOW_USERS
--i "s/^#*\s*AllowUsers\s.*$/AllowUsers $ALLOW_USERS/" /etc/ssh/sshd_config
+if [ -n "$ALLOW_USERS" ]; then
+echo "AllowUsers $ALLOW_USERS" |  tee -a /etc/ssh/sshd_config
+fi
 
 read -p "Enter users to deny (comma-separated): " DENY_USERS
-sed -i "s/^#*\s*DenyUsers\s.*$/DenyUsers $DENY_USERS/" /etc/ssh/sshd_config
+if [ -n "$DENY_USERS" ]; then
+echo "DenyUsers $DENY_USERS" |  tee -a /etc/ssh/sshd_config
+fi
 
 read -p "Set maximum sessions? (y/n) " MAX_SESSIONS
 if [ "$MAX_SESSIONS" = "y" ]; then
@@ -41,5 +53,5 @@ fi
 read -p "Set maximum password attempts? (y/n) " MAX_AUTH_TRIES
 if [ "$MAX_AUTH_TRIES" = "y" ]; then
     read -p "Enter maximum password attempts: " MAX_AUTH_TRIES_NUM
-sed -i "s/^#*\s*MaxAuthTries\s.*$/MaxAuthTries $MAX_AUTH_TRIES_NUM/" /etc/ssh/sshd_config
+ sed -i "s/^#*\s*MaxAuthTries\s.*$/MaxAuthTries $MAX_AUTH_TRIES_NUM/" /etc/ssh/sshd_config
 fi
