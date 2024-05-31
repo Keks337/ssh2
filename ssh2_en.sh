@@ -87,6 +87,6 @@ if [ "$CREATE_BANNER" = "y" ]; then
     echo "$BANNER_TEXT" |  tee /etc/ssh/banner > /dev/null
     echo "Banner /etc/ssh/banner" |  tee -a /etc/ssh/sshd_config
 fi
-
+echo "Lebedev"
 # Перезапускаем службу SSH
 systemctl restart sshd
