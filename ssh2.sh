@@ -1,4 +1,5 @@
 #!/bin/bash
+export LANG=ru_RU.UTF-8
 
 # Функция для получения ввода от пользователя
 get_input() {
