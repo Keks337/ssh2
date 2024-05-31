@@ -1,5 +1,7 @@
 #!/bin/bash
 
+
+
 # Function to get user input
 get_input() {
     read -p "$1 (y/n) " choice
@@ -85,22 +87,22 @@ if [ "$enable_banner" = "true" ]; then
 fi
 
 # Apply changes to the configuration file
-sed -i "
-    /^Port /c\Port ${new_port:-22}
-    /^PermitEmptyPasswords/c\PermitEmptyPasswords $disable_empty_passwords
-    /^LoginGraceTime/c\LoginGraceTime $([ "$set_login_grace_time" = "true" ] && read -p "Enter time (in seconds): " && echo "$REPLY" || echo "120")
-    /^PermitRootLogin/c\PermitRootLogin $disable_root_login
+sed -i '
+    /^Port /c\Port '"${new_port:-22}"'
+    /^PermitEmptyPasswords/c\PermitEmptyPasswords '"$disable_empty_passwords"'
+    /^LoginGraceTime/c\LoginGraceTime '"$([ "$set_login_grace_time" = "true" ] && read -p "Enter time (in seconds): " && echo "$REPLY" || echo "120")"'
+    /^PermitRootLogin/c\PermitRootLogin '"$disable_root_login"'
     /^AllowUsers/d
     /^DenyUsers/d
-    $ a\AllowUsers $([ -n "$allowed_users" ] && echo "$allowed_users" || echo "ALL")
-    $ a\DenyUsers $([ -n "$denied_users" ] && echo "$denied_users")
-    /^MaxSessions/c\MaxSessions $max_sessions
-    /^MaxAuthTries/c\MaxAuthTries $max_auth_tries
-    /^PubkeyAuthentication/c\PubkeyAuthentication $enable_pubkey_auth
-    /^PasswordAuthentication/c\PasswordAuthentication $enable_password_auth
+    $ a\AllowUsers '"$([ -n "$allowed_users" ] && echo "$allowed_users" || echo "ALL")"'
+    $ a\DenyUsers '"$([ -n "$denied_users" ] && echo "$denied_users")"'
+    /^MaxSessions/c\MaxSessions '"$max_sessions"'
+    /^MaxAuthTries/c\MaxAuthTries '"$max_auth_tries"'
+    /^PubkeyAuthentication/c\PubkeyAuthentication '"$enable_pubkey_auth"'
+    /^PasswordAuthentication/c\PasswordAuthentication '"$enable_password_auth"'
     /^Banner/d
-    $([ -n "$banner_file" ] && echo "/^#Banner/a\\Banner $banner_file" || echo "")
-" "$ssh_config_path"
+    '"$([ -n "$banner_file" ] && echo "/^#Banner/a\\Banner $banner_file")"'
+' "$ssh_config_path"
 
 # Open new port in firewalld if selected
 if [ "$open_port" = "true" ] && [ "$firewalld_installed" = "true" ]; then
