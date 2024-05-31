@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 # Function to get user input
 get_input() {
     read -p "$1 (y/n) " choice
@@ -100,7 +99,7 @@ sed -i "
     /^PubkeyAuthentication/c\PubkeyAuthentication $enable_pubkey_auth
     /^PasswordAuthentication/c\PasswordAuthentication $enable_password_auth
     /^Banner/d
-    $([ -n "$banner_file" ] && echo "/^#Banner/a\Banner $banner_file")
+    $([ -n "$banner_file" ] && echo "/^#Banner/a\\Banner $banner_file" || echo "")
 " "$ssh_config_path"
 
 # Open new port in firewalld if selected
