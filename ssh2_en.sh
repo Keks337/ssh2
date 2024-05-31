@@ -84,11 +84,9 @@ fi
 read -p "Do you want to create a banner? (y/n) " CREATE_BANNER
 if [ "$CREATE_BANNER" = "y" ]; then
     read -p "Enter banner text: " BANNER_TEXT
-    read -p "Enter banner file path (with file name): " BANNER_FILE_PATH
-    echo "$BANNER_TEXT" |  tee "$BANNER_FILE_PATH" > /dev/null
-    sed -i "s/^#*\s*Banner\s.*$/Banner \/var\/run\/sshd\_banner/" /etc/ssh/sshd\_config
-    ln -sf "$BANNER_FILE_PATH" /var/run/sshd_banner
+    echo "$BANNER_TEXT" |  tee /etc/ssh/banner > /dev/null
+    echo "Banner /etc/ssh/banner" |  tee -a /etc/ssh/sshd_config
 fi
 
 # Перезапускаем службу SSH
-systemctl restart ssh
+systemctl restart sshd
