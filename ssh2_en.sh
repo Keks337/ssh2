@@ -56,14 +56,16 @@ if [ "$ENABLE_PASSWORD_AUTH" = "y" ]; then
      sed -i "s/^#*\s*PasswordAuthentication\s.*$/PasswordAuthentication yes/" /etc/ssh/sshd_config
 fi
 
-read -p "Enter users to allow (comma-separated): " ALLOW_USERS
+read -p "Enter users to allow (->,): " ALLOW_USERS
 if [ -n "$ALLOW_USERS" ]; then
-     sed -i "s/^#*\s*AllowUsers\s.*$/AllowUsers $ALLOW_USERS/" /etc/ssh/sshd_config
+    sed -i "/^AllowUsers/ d" /etc/ssh/sshd_config
+    echo "AllowUsers $ALLOW_USERS" |  tee -a /etc/ssh/sshd_config
 fi
 
-read -p "Enter users to deny (comma-separated): " DENY_USERS
+read -p "Enter users to deny (->,): " DENY_USERS
 if [ -n "$DENY_USERS" ]; then
-     sed -i "s/^#*\s*DenyUsers\s.*$/DenyUsers $DENY_USERS/" /etc/ssh/sshd_config
+    sed -i "/^DenyUsers/ d" /etc/ssh/sshd_config
+    echo "DenyUsers $DENY_USERS" |  tee -a /etc/ssh/sshd_config
 fi
 
 read -p "Set maximum sessions? (y/n) " MAX_SESSIONS
@@ -82,9 +84,10 @@ fi
 read -p "Do you want to create a banner? (y/n) " CREATE_BANNER
 if [ "$CREATE_BANNER" = "y" ]; then
     read -p "Enter banner text: " BANNER_TEXT
-    read -p "Enter path to banner file: " BANNER_FILE
-    echo "$BANNER_TEXT" |  tee "$BANNER_FILE" > /dev/null
-     sed -i "s/^#*\s*Banner\s.*$/Banner $BANNER_FILE/" /etc/ssh/sshd_config
+    read -p "Enter banner file path (with file name): " BANNER_FILE_PATH
+    echo "$BANNER_TEXT" |  tee "$BANNER_FILE_PATH" > /dev/null
+    sed -i "s/^#*\s*Banner\s.*$/Banner \/var\/run\/sshd\_banner/" /etc/ssh/sshd\_config
+    ln -sf "$BANNER_FILE_PATH" /var/run/sshd_banner
 fi
 
 # Перезапускаем службу SSH
