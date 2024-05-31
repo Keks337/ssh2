@@ -30,53 +30,57 @@ fi
 
 # Disable empty passwords?
 disable_empty_passwords=$(get_input "Disable empty passwords?")
+if [ "$disable_empty_passwords" = "true" ]; then
+    sed -i "s/^PermitEmptyPasswords.*/PermitEmptyPasswords no/" $ssh_config_path
+fi
 
 # Set login grace time?
 set_login_grace_time=$(get_input "Set login grace time?")
 if [ "$set_login_grace_time" = "true" ]; then
     read -p "Enter login grace time (seconds): " login_grace_time
+    sed -i "s/^LoginGraceTime.*/LoginGraceTime $login_grace_time/" $ssh_config_path
 fi
 
 # Disable root login?
 disable_root_login=$(get_input "Disable root login?")
+if [ "$disable_root_login" = "true" ]; then
+    sed -i "s/^PermitRootLogin.*/PermitRootLogin no/" $ssh_config_path
+fi
 
 # Allow users?
 allow_users=$(get_input "Allow specific users?")
 if [ "$allow_users" = "true" ]; then
-    read -p "Enter allowed users (comma-separated): " allowed_users
-    allowed_users=$(sed 's/,/ /g' <<< "$allowed_users")
+    read -p "Enter allowed users (comma-separated): " allowed_users_list
+    allowed_users=( $allowed_users_list )
+    echo "AllowUsers ${allowed_users[@]}" >> $ssh_config_path
 fi
 
 # Deny users?
 deny_users=$(get_input "Deny specific users?")
 if [ "$deny_users" = "true" ]; then
-    read -p "Enter denied users (comma-separated): " denied_users
-    denied_users=$(sed 's/,/ /g' <<< "$denied_users")
+    read -p "Enter denied users (comma-separated): " denied_users_list
+    denied_users=( $denied_users_list )
+    echo "DenyUsers ${denied_users[@]}" >> $ssh_config_path
 fi
 
 # Set maximum sessions?
 set_max_sessions=$(get_input "Set maximum sessions?")
 if [ "$set_max_sessions" = "true" ]; then
     read -p "Enter maximum sessions: " max_sessions
+    sed -i "s/^MaxSessions.*/MaxSessions $max_sessions/" $ssh_config_path
 fi
 
 # Set maximum password attempts?
 set_max_auth_tries=$(get_input "Set maximum password attempts?")
 if [ "$set_max_auth_tries" = "true" ]; then
     read -p "Enter maximum password attempts: " max_auth_tries
+    sed -i "s/^MaxAuthTries.*/MaxAuthTries $max_auth_tries/" $ssh_config_path
 fi
 
-# Apply changes to the configuration file
-sed -i "
-/^Port .*/c\Port $new_port
-/^PermitEmptyPasswords .*/c\PermitEmptyPasswords $disable_empty_passwords
-/^LoginGraceTime .*/c\LoginGraceTime $login_grace_time
-/^PermitRootLogin .*/c\PermitRootLogin $disable_root_login
-/^AllowUsers .*/c\AllowUsers $allowed_users
-/^DenyUsers .*/c\DenyUsers $denied_users
-/^MaxSessions .*/c\MaxSessions $max_sessions
-/^MaxAuthTries .*/c\MaxAuthTries $max_auth_tries
-" "$ssh_config_path"
+# Change default port
+if [ "$change_port" = "true" ]; then
+    sed -i "s/^Port.*/Port $new_port/" $ssh_config_path
+fi
 
 # Restart SSH service
 systemctl restart sshd
