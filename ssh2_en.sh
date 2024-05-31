@@ -1,5 +1,16 @@
 #!/bin/bash
 
+# Проверяем, установлен ли firewalld
+if ! dpkg -s firewalld &>/dev/null; then
+    read -p "Firewalld is not installed. Do you want to install it? (y/n) " INSTALL_FIREWALLD
+    if [ "$INSTALL_FIREWALLD" = "y" ]; then
+         apt install firewalld -y
+    else
+        echo "Cannot set up port forwarding without firewalld."
+        exit 1
+    fi
+fi
+
 # Запрашиваем у пользователя изменить ли порт по умолчанию
 read -p "Do you want to change the default port? (y/n) " CHANGE_PORT
 if [ "$CHANGE_PORT" = "y" ]; then
@@ -24,9 +35,9 @@ if [ "$DISABLE_EMPTY_PASSWDS" = "y" ]; then
      sed -i "s/^#*\s*PermitEmptyPasswords\s.*$/PermitEmptyPasswords no/" /etc/ssh/sshd_config
 fi
 
-read -p "Set login grace time? (y/n) " LOGIN_GRACE_TIME
-if [ "$LOGIN_GRACE_TIME" = "y" ]; then
-    read -p "Enter login grace time (seconds): " GRACE_TIME
+read -p "Set login grace time (minutes): " GRACE_TIME
+if [ -n "$GRACE_TIME" ]; then
+    GRACE_TIME=$((GRACE_TIME * 60))
      sed -i "s/^#*\s*LoginGraceTime\s.*$/LoginGraceTime $GRACE_TIME/" /etc/ssh/sshd_config
 fi
 
@@ -47,12 +58,12 @@ fi
 
 read -p "Enter users to allow (comma-separated): " ALLOW_USERS
 if [ -n "$ALLOW_USERS" ]; then
-    echo "AllowUsers $ALLOW_USERS" |  tee -a /etc/ssh/sshd_config
+     sed -i "s/^#*\s*AllowUsers\s.*$/AllowUsers $ALLOW_USERS/" /etc/ssh/sshd_config
 fi
 
 read -p "Enter users to deny (comma-separated): " DENY_USERS
 if [ -n "$DENY_USERS" ]; then
-    echo "DenyUsers $DENY_USERS" |  tee -a /etc/ssh/sshd_config
+     sed -i "s/^#*\s*DenyUsers\s.*$/DenyUsers $DENY_USERS/" /etc/ssh/sshd_config
 fi
 
 read -p "Set maximum sessions? (y/n) " MAX_SESSIONS
@@ -66,3 +77,15 @@ if [ "$MAX_AUTH_TRIES" = "y" ]; then
     read -p "Enter maximum password attempts: " MAX_AUTH_TRIES_NUM
      sed -i "s/^#*\s*MaxAuthTries\s.*$/MaxAuthTries $MAX_AUTH_TRIES_NUM/" /etc/ssh/sshd_config
 fi
+
+# Запрашиваем у пользователя согласия на создание баннера
+read -p "Do you want to create a banner? (y/n) " CREATE_BANNER
+if [ "$CREATE_BANNER" = "y" ]; then
+    read -p "Enter banner text: " BANNER_TEXT
+    read -p "Enter path to banner file: " BANNER_FILE
+    echo "$BANNER_TEXT" |  tee "$BANNER_FILE" > /dev/null
+     sed -i "s/^#*\s*Banner\s.*$/Banner $BANNER_FILE/" /etc/ssh/sshd_config
+fi
+
+# Перезапускаем службу SSH
+systemctl restart ssh
